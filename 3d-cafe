@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<title>3D Cafe</title>
+
+<style>
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
+}
+.ui {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+}
+button {
+    padding: 12px 24px;
+    font-size: 16px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background: #1f1f1f;
+    color: #fff;
+}
+</style>
+</head>
+
+<body>
+
+<div class="ui">
+    <button onclick="goMenu()">☕ Menü</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.158.0/examples/js/controls/PointerLockControls.js"></script>
+
+<script>
+// ================= SAHNE =================
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x111111);
+
+// ================= KAMERA =================
+const camera = new THREE.PerspectiveCamera(
+    75, window.innerWidth / window.innerHeight, 0.1, 1000
+);
+camera.position.set(0, 1.6, 4);
+
+// ================= RENDER =================
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// ================= KONTROLLER =================
+const controls = new THREE.PointerLockControls(camera, document.body);
+let menuMode = false;
+
+document.body.addEventListener("click", () => {
+    if (!menuMode) controls.lock();
+});
+
+// ================= IŞIK =================
+scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+const light = new THREE.PointLight(0xffffff, 1);
+light.position.set(0, 5, 3);
+scene.add(light);
+
+// ================= TEXTURE =================
+const loader = new THREE.TextureLoader();
+const cafeTexture = loader.load("cafe.jpg");
+
+// ================= ODA DUVARLARI =================
+const wallMat = new THREE.MeshStandardMaterial({
+    map: cafeTexture
+});
+
+function wall(x, z, ry) {
+    const w = new THREE.Mesh(
+        new THREE.PlaneGeometry(10, 4),
+        wallMat
+    );
+    w.position.set(x, 2, z);
+    w.rotation.y = ry;
+    scene.add(w);
+}
+
+wall(0, -5, 0);
+wall(0, 5, Math.PI);
+wall(-5, 0, Math.PI / 2);
+wall(5, 0, -Math.PI / 2);
+
+// ================= ZEMİN =================
+const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(10, 10),
+    new THREE.MeshStandardMaterial({ color: 0x2b2b2b })
+);
+floor.rotation.x = -Math.PI / 2;
+scene.add(floor);
+
+// ================= MENÜ DUVARI =================
+const menuBoard = new THREE.Mesh(
+    new THREE.PlaneGeometry(2.8, 3.8),
+    new THREE.MeshStandardMaterial({
+        map: cafeTexture
+    })
+);
+menuBoard.position.set(0, 2, -4.9);
+scene.add(menuBoard);
+
+// ================= KAMERA MENÜ GEÇİŞ =================
+const menuTarget = new THREE.Vector3(0, 1.6, -3);
+let target = camera.position.clone();
+
+function goMenu() {
+    menuMode = true;
+    controls.unlock();
+    target.copy(menuTarget);
+}
+
+// ================= GERİ DÖN =================
+document.body.addEventListener("dblclick", () => {
+    menuMode = false;
+    controls.lock();
+});
+
+// ================= ANİMASYON =================
+function animate() {
+    requestAnimationFrame(animate);
+    camera.position.lerp(target, 0.05);
+    if (menuMode) camera.lookAt(0, 1.6, -5);
+    renderer.render(scene, camera);
+}
+animate();
+
+// ================= RESPONSIVE =================
+window.addEventListener("resize", () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+
+</body>
+</html>
